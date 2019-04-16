@@ -13,10 +13,6 @@ import java.net.URL;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 
-/**
- * Created by michaeldunn on 3/13/17.
- */
-
 public class DownloadAndEncryptFileTask extends AsyncTask<Void, Void, Void> {
 
   private String mUrl;

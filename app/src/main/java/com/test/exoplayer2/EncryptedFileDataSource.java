@@ -21,13 +21,10 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-/**
- * Created by michaeldunn on 3/13/17.
- */
 
 public final class EncryptedFileDataSource implements DataSource {
 
-  private final TransferListener<? super EncryptedFileDataSource> mTransferListener;
+  private TransferListener mTransferListener;
   private StreamingCipherInputStream mInputStream;
   private Uri mUri;
   private long mBytesRemaining;
@@ -35,12 +32,18 @@ public final class EncryptedFileDataSource implements DataSource {
   private Cipher mCipher;
   private SecretKeySpec mSecretKeySpec;
   private IvParameterSpec mIvParameterSpec;
+  private DataSpec mDataSpec;
 
-  public EncryptedFileDataSource(Cipher cipher, SecretKeySpec secretKeySpec, IvParameterSpec ivParameterSpec, TransferListener<? super EncryptedFileDataSource> listener) {
+  public EncryptedFileDataSource(Cipher cipher, SecretKeySpec secretKeySpec, IvParameterSpec ivParameterSpec, TransferListener listener) {
     mCipher = cipher;
     mSecretKeySpec = secretKeySpec;
     mIvParameterSpec = ivParameterSpec;
     mTransferListener = listener;
+  }
+
+  @Override
+  public void addTransferListener(TransferListener transferListener) {
+      mTransferListener = transferListener;
   }
 
   @Override
@@ -51,6 +54,7 @@ public final class EncryptedFileDataSource implements DataSource {
     }
     // #getUri is part of the contract...
     mUri = dataSpec.uri;
+    mDataSpec = new DataSpec(mUri);
     // put all our throwable work in a single block, wrap the error in a custom Exception
     try {
       setupInputStream();
@@ -63,7 +67,7 @@ public final class EncryptedFileDataSource implements DataSource {
     mOpened = true;
     // notify
     if (mTransferListener != null) {
-      mTransferListener.onTransferStart(this, dataSpec);
+      mTransferListener.onTransferStart(this, dataSpec, true);
     }
     // report
     return mBytesRemaining;
@@ -119,7 +123,7 @@ public final class EncryptedFileDataSource implements DataSource {
     }
     // notify
     if (mTransferListener != null) {
-      mTransferListener.onBytesTransferred(this, bytesRead);
+      mTransferListener.onBytesTransferred(this, mDataSpec , true, bytesRead);
     }
     // report
     return bytesRead;
@@ -151,7 +155,7 @@ public final class EncryptedFileDataSource implements DataSource {
       if (mOpened) {
         mOpened = false;
         if (mTransferListener != null) {
-          mTransferListener.onTransferEnd(this);
+          mTransferListener.onTransferEnd(this, mDataSpec, true);
         }
       }
     }
