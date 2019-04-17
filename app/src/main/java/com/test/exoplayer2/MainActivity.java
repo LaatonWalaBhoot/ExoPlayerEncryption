@@ -8,8 +8,10 @@ import android.view.View;
 import android.widget.VideoView;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.LoadControl;
+import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
@@ -19,7 +21,7 @@ import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
-import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
+import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 
@@ -43,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
   private File mEncryptedFile;
 
-  private SimpleExoPlayerView mSimpleExoPlayerView;
+  private PlayerView mExoPlayerView;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    mSimpleExoPlayerView = (SimpleExoPlayerView) findViewById(R.id.simpleexoplayerview);
+    mExoPlayerView = findViewById(R.id.exoplayerview);
 
     mEncryptedFile = new File(getFilesDir(), ENCRYPTED_FILE_NAME);
 
@@ -113,16 +115,17 @@ public class MainActivity extends AppCompatActivity {
 
   public void playVideo(View view) {
     DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
-    TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
+    TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory();
     TrackSelector trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
     LoadControl loadControl = new DefaultLoadControl();
-    SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(this, trackSelector, loadControl);
-    mSimpleExoPlayerView.setPlayer(player);
+    RenderersFactory renderersFactory = new DefaultRenderersFactory(this);
+    SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(this, renderersFactory, trackSelector, loadControl, null, bandwidthMeter);
+    mExoPlayerView.setPlayer(player);
     DataSource.Factory dataSourceFactory = new EncryptedFileDataSourceFactory(mCipher, mSecretKeySpec, mIvParameterSpec, bandwidthMeter);
     ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
     try {
       Uri uri = Uri.fromFile(mEncryptedFile);
-      MediaSource videoSource = new ExtractorMediaSource(uri, dataSourceFactory, extractorsFactory, null, null);
+      MediaSource videoSource = new ExtractorMediaSource.Factory(dataSourceFactory).setExtractorsFactory(extractorsFactory).createMediaSource(uri);
       player.prepare(videoSource);
       player.setPlayWhenReady(true);
     } catch (Exception e) {

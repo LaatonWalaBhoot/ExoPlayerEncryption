@@ -21,8 +21,8 @@
       android:text="Play Video"
       android:onClick="playVideo" />
 
-  <com.google.android.exoplayer2.ui.SimpleExoPlayerView
-      android:id="@+id/simpleexoplayerview"
+  <com.google.android.exoplayer2.ui.PlayerView
+      android:id="@+id/exoplayerview"
       android:layout_width="320dp"
       android:layout_height="180dp"
       xmlns:app="http://schemas.android.com/apk/res-auto"
